@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { AlertController, NavController } from 'ionic-angular';
+import { NavController, AlertController } from 'ionic-angular';
 import { Calendar } from '@ionic-native/calendar';
 import { AddEventPage } from '../add-event/add-event';
 
@@ -22,8 +22,8 @@ export class HomePage {
   isSelected: any;
 
   constructor(public navCtrl: NavController,
-              private calender: Calendar,
-              private alertCtrl: AlertController  
+              private calendar: Calendar,
+              private alertCtrl: AlertController
     ) {
 
   }
@@ -31,8 +31,8 @@ export class HomePage {
   ionViewWillEnter(){
     this.date = new Date();
     this.monthNames = [
-      "January","Febuary","March","April","May","June",
-      "July","August","September","October","December"
+      "January","Febuary","April","May","June",
+      "July","August","September","October","November","December"
     ];
     this.getDaysOfMonth();
     this.loadEventThisMonth();
@@ -84,11 +84,83 @@ export class HomePage {
     this.getDaysOfMonth();
   }
 
-  loadEventThisMonth(){
-
+  loadEventThisMonth() {
+    this.eventList = new Array();
+    var startDate = new Date(this.date.getFullYear(), this.date.getMonth(), 1);
+    var endDate = new Date(this.date.getFullYear(), this.date.getMonth()+1, 0);
+    this.calendar.listEventsInRange(startDate, endDate).then(
+      (msg) => {
+        msg.forEach(item => {
+          this.eventList.push(item);
+        });
+      },
+      (err) => {
+        console.log(err);
+      }
+    );
   }
 
   addEvent() {
     this.navCtrl.push(AddEventPage);
   }
+
+  checkEvent(day: any) {
+    var hasEvent = false;
+    var thisDate1 = this.date.getFullYear()+"-"+(this.date.getMonth()+1)+"-"+day+" 00:00:00";
+    var thisDate2 = this.date.getFullYear()+"-"+(this.date.getMonth()+1)+"-"+day+" 23:59:59";
+    this.eventList.forEach(event => {
+      if(((event.startDate >= thisDate1) && (event.startDate <= thisDate2)) || ((event.endDate >= thisDate1) && (event.endDate <= thisDate2))) {
+        hasEvent = true;
+      }
+    });
+    return hasEvent;
+  }
+
+  selectDate(day: any) {
+    this.isSelected = false;
+    this.selectedEvent = new Array();
+    var thisDate1 = this.date.getFullYear()+"-"+(this.date.getMonth()+1)+"-"+day+" 00:00:00";
+    var thisDate2 = this.date.getFullYear()+"-"+(this.date.getMonth()+1)+"-"+day+" 23:59:59";
+    this.eventList.forEach(event => {
+      if(((event.startDate >= thisDate1) && (event.startDate <= thisDate2)) || ((event.endDate >= thisDate1) && (event.endDate <= thisDate2))) {
+        this.isSelected = true;
+        this.selectedEvent.push(event);
+      }
+    });
+  }
+
+  deleteEvent(evt: any) {
+    // console.log(new Date(evt.startDate.replace(/\s/, 'T')));
+    // console.log(new Date(evt.endDate.replace(/\s/, 'T')));
+    let alert = this.alertCtrl.create({
+      title: 'Confirm Delete',
+      message: 'Are you sure want to delete this event?',
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+          handler: () => {
+            console.log('Cancel clicked');
+          }
+        },
+        {
+          text: 'Ok',
+          handler: () => {
+            this.calendar.deleteEvent(evt.title, evt.location, evt.notes, new Date(evt.startDate.replace(/\s/, 'T')), new Date(evt.endDate.replace(/\s/, 'T'))).then(
+              (msg) => {
+                console.log(msg);
+                this.loadEventThisMonth();
+                this.selectDate(new Date(evt.startDate.replace(/\s/, 'T')).getDate());
+              },
+              (err) => {
+                console.log(err);
+              }
+            )
+          }
+        }
+      ]
+    });
+    alert.present();
+  }
+
 }

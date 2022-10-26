@@ -1,6 +1,6 @@
 import { IonicPage, NavController, NavParams, AlertController } from 'ionic-angular';
 import { Calendar } from '@ionic-native/calendar';
-import { Component } from '@angular/core';
+import { Component } from '@angular/core'
 
 @IonicPage()
 @Component({
@@ -42,7 +42,5 @@ export class AddEventPage {
       }
     );
   }
-  
-  
 
 }
